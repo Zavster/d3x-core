@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS DbRecord
+(
+  id INTEGER AUTO_INCREMENT(0, 1) PRIMARY KEY ,
+  name VARCHAR(100) NOT NULL,
+  utcValue BIGINT NOT NULL,
+  enabled BIT NOT NULL,
+  price DOUBLE NOT NULL,
+  zoneId VARCHAR(40) NOT NULL,
+  aquireDate DATE NOT NULL,
+  aquireTime TIME NOT NULL,
+  lastUpdated TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS DbRecordIndex1 on DbRecord (aquireDate);
+
+TRUNCATE TABLE DbRecord;
