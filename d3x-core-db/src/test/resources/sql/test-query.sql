@@ -1,0 +1,1 @@
+SELECT * FROM DbRecord WHERE enabled = ? AND aquireDate > ?
