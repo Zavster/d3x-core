@@ -175,13 +175,18 @@ public interface DatabaseMapping<T> {
                     stmt.setDate(paramIndex, new java.sql.Date(((java.util.Date) arg).getTime()));
                 } else if (arg instanceof LocalDate) {
                     stmt.setDate(paramIndex, java.sql.Date.valueOf((LocalDate) arg));
-                } else if (arg instanceof LocalDateTime) {
-                    stmt.setTimestamp(paramIndex, Timestamp.valueOf((LocalDateTime) arg));
                 } else if (arg instanceof Instant) {
                     stmt.setTimestamp(paramIndex, new Timestamp(((Instant)arg).toEpochMilli()));
-                } else if (arg instanceof ZonedDateTime) {
-                    final ZonedDateTime dateTime = (ZonedDateTime)arg;
+                } else if (arg instanceof LocalDateTime) {
+                    final ZoneId zoneId = ZoneId.of(timeZone.getID());
                     final Calendar calendar = Calendar.getInstance(timeZone);
+                    final LocalDateTime localDateTime = (LocalDateTime)arg;
+                    final ZonedDateTime zonedDateTime = localDateTime.atZone(zoneId);
+                    stmt.setTimestamp(paramIndex, new Timestamp(zonedDateTime.toInstant().toEpochMilli()), calendar);
+                } else if (arg instanceof ZonedDateTime) {
+                    final ZoneId zoneId = ZoneId.of(timeZone.getID());
+                    final Calendar calendar = Calendar.getInstance(timeZone);
+                    final ZonedDateTime dateTime = ((ZonedDateTime)arg).withZoneSameInstant(zoneId);
                     stmt.setTimestamp(paramIndex, new Timestamp(dateTime.toInstant().toEpochMilli()), calendar);
                 } else {
                     throw new RuntimeException("Cannot bind arg to PreparedStatement, unsupported arg type:" + arg);

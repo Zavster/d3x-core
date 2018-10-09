@@ -43,7 +43,7 @@ public class CronTests {
                 LocalDateTime.of(2019, 12, 25, 16, 0)
         );
         ZoneId zone = ZoneId.systemDefault();
-        Cron cron = Cron.parse("0 0 12,16 25 dec 2018-2019");
+        Cron cron = Cron.parse("0 0 12,16 25 dec * 2018-2019");
         LocalDateTime start = expected.get(0);
         List<LocalDateTime> actual = cron.getLocalDateTimes(start, zone).collect(Collectors.toList());
         Assert.assertEquals(actual.size(), expected.size());
@@ -73,7 +73,7 @@ public class CronTests {
                 LocalDateTime.of(2018, 12, 25, 16, 45)
         );
         ZoneId zone = ZoneId.systemDefault();
-        Cron cron = Cron.parse("0 0-59/15 12,16 24-25 dec 2018");
+        Cron cron = Cron.parse("0 0-59/15 12,16 24-25 dec * 2018");
         LocalDateTime start = expected.get(0);
         List<LocalDateTime> actual = cron.getLocalDateTimes(start, zone).collect(Collectors.toList());
         actual.forEach(v -> IO.println(v + " on " + v.getDayOfWeek()));
@@ -96,7 +96,7 @@ public class CronTests {
                 LocalDateTime.of(2018, 12, 24, 16, 45)
         );
         ZoneId zone = ZoneId.systemDefault();
-        Cron cron = Cron.parse("0 0-59/15 12,16 mon 24-25 dec 2018");
+        Cron cron = Cron.parse("0 0-59/15 12,16 24-25 dec mon 2018");
         LocalDateTime start = expected.get(0);
         List<LocalDateTime> actual = cron.getLocalDateTimes(start, zone).collect(Collectors.toList());
         Assert.assertTrue(actual.stream().allMatch(v -> v.getDayOfWeek() == DayOfWeek.MONDAY));
@@ -116,7 +116,7 @@ public class CronTests {
                 LocalDateTime.of(2018, 10, 31, 12, 15)
         );
         ZoneId zone = ZoneId.systemDefault();
-        Cron cron = Cron.parse("0 15 12 wed * oct 2018");
+        Cron cron = Cron.parse("0 15 12 * oct wed 2018");
         LocalDateTime start = expected.get(0);
         List<LocalDateTime> actual = cron.getLocalDateTimes(start, zone).collect(Collectors.toList());
         actual.forEach(v -> IO.println(v + " on " + v.getDayOfWeek()));
@@ -139,7 +139,7 @@ public class CronTests {
                 LocalDateTime.of(2018, 12, 31, 16, 15)
         );
         ZoneId zone = ZoneId.systemDefault();
-        final Cron cron = Cron.parse("0 15 16 31 * 2018");
+        final Cron cron = Cron.parse("0 15 16 31 * * 2018");
         LocalDateTime start = expected.get(0);
         List<LocalDateTime> actual = cron.getLocalDateTimes(start, zone).collect(Collectors.toList());
         actual.forEach(v -> IO.println(v + " on " + v.getDayOfWeek()));
@@ -156,7 +156,7 @@ public class CronTests {
                 LocalDateTime.of(2018, 10, 31, 16, 15)
         );
         ZoneId zone = ZoneId.systemDefault();
-        final Cron cron = Cron.parse("0 15 16 wed 31 * 2018");
+        final Cron cron = Cron.parse("0 15 16 31 * wed 2018");
         LocalDateTime start = expected.get(0);
         List<LocalDateTime> actual = cron.getLocalDateTimes(start, zone).collect(Collectors.toList());
         actual.forEach(v -> IO.println(v + " on " + v.getDayOfWeek()));
@@ -173,7 +173,7 @@ public class CronTests {
         ZoneId ldn = ZoneId.of("Europe/London");
         ZoneId nyc = ZoneId.of("America/New_York");
         LocalDateTime first = LocalDateTime.of(2018, 1, 1, 2, 15, 22);
-        Cron cron = Cron.parse("22 15 2 * * 2018");
+        Cron cron = Cron.parse("22 15 2 * * * 2018");
         Assert.assertEquals(cron.getLocalDates(first.toLocalDate(), ldn).iterator().next(), first.toLocalDate());
         Assert.assertEquals(cron.getLocalDates(first.toLocalDate(), nyc).iterator().next(), first.toLocalDate());
         Assert.assertEquals(cron.getLocalDateTimes(first, ldn).iterator().next(), first);
@@ -186,11 +186,11 @@ public class CronTests {
     @DataProvider(name="start-times")
     public Object[][] startTimes() {
         return new Object[][] {
-                { "22 15 2 * 12 *", LocalDateTime.parse("2018-12-03T02:15:22"), LocalDateTime.parse("2018-12-03T02:15:22") },
-                { "22 15 2 * 12 *", LocalDateTime.parse("2018-12-03T01:15:00"), LocalDateTime.parse("2018-12-03T02:15:22") },
-                { "22 15 2 * 12 *", LocalDateTime.parse("2018-12-03T02:30:00"), LocalDateTime.parse("2018-12-04T02:15:22") },
-                { "22 15 2 * 12 *", LocalDateTime.parse("2018-12-31T02:30:00"), LocalDateTime.parse("2019-12-01T02:15:22") },
-                { "22 15 2 6,8,31 12 *", LocalDateTime.parse("2018-12-31T02:30:00"), LocalDateTime.parse("2019-12-06T02:15:22") },
+                { "22 15 2 * 12 * *", LocalDateTime.parse("2018-12-03T02:15:22"), LocalDateTime.parse("2018-12-03T02:15:22") },
+                { "22 15 2 * 12 * *", LocalDateTime.parse("2018-12-03T01:15:00"), LocalDateTime.parse("2018-12-03T02:15:22") },
+                { "22 15 2 * 12 * *", LocalDateTime.parse("2018-12-03T02:30:00"), LocalDateTime.parse("2018-12-04T02:15:22") },
+                { "22 15 2 * 12 * *", LocalDateTime.parse("2018-12-31T02:30:00"), LocalDateTime.parse("2019-12-01T02:15:22") },
+                { "22 15 2 6,8,31 12 * *", LocalDateTime.parse("2018-12-31T02:30:00"), LocalDateTime.parse("2019-12-06T02:15:22") },
         };
     }
 
@@ -200,6 +200,14 @@ public class CronTests {
         Cron cron = Cron.parse(expression);
         LocalDateTime actual = cron.getLocalDateTimes(start, ZoneId.of("GMT")).iterator().next();
         Assert.assertEquals(actual, expected);
+    }
+
+
+    @Test()
+    public void expression() {
+        String expected = "* * * * * * *";
+        String result = Cron.parse(expected).getExpression();
+        Assert.assertEquals(result, expected);
     }
 
 }

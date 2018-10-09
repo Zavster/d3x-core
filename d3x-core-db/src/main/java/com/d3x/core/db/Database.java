@@ -166,6 +166,16 @@ public class Database extends LifeCycle.Base {
 
 
     /**
+     * Returns true if a mapping for the type exists
+     * @param type  the data type
+     * @return      true if a mapping exists
+     */
+    public boolean supports(Class<?> type) {
+        return mappingsMap.containsKey(type);
+    }
+
+
+    /**
      * Registers a database mapping for a data type
      * @param mapping   the mapping reference
      * @param <T>       the type for mapping
@@ -212,7 +222,7 @@ public class Database extends LifeCycle.Base {
         PreparedStatement stmt = null;
         final TimeZone timeZone = TimeZone.getDefault();
         final String sqlExpression = sql.startsWith("/") ? sql(sql) : sql;
-        try (Connection conn = dataSource.getConnection()) {
+        try (Connection conn = getDataSource().getConnection()) {
             stmt = conn.prepareStatement(sqlExpression);
             DatabaseMapping.bindArgs(stmt, timeZone, Arrays.asList(args));
             rs = stmt.executeQuery();
@@ -232,10 +242,21 @@ public class Database extends LifeCycle.Base {
      * @return          the update count if applicable
      * @throws DatabaseException    if fails to execute sql
      */
+    public Option<Integer> execute(String sql) throws DatabaseException {
+        return execute(sql, Option.empty());
+    }
+
+    /**
+     * Executes the sql definition using java.sql.Statement.execute()
+     * @param sql       the SQL statement or path to classpath resource with SQL
+     * @param handler   the optional handler for any ResultSets that may be produced
+     * @return          the update count if applicable
+     * @throws DatabaseException    if fails to execute sql
+     */
     public Option<Integer> execute(String sql, Option<Consumer<ResultSet>> handler) throws DatabaseException {
         Statement stmt = null;
         final String sqlExpression = sql.startsWith("/") ? sql(sql) : sql;
-        try (Connection conn = dataSource.getConnection()) {
+        try (Connection conn = getDataSource().getConnection()) {
             stmt = conn.createStatement();
             final boolean results = stmt.execute(sqlExpression);
             if (results && handler.isPresent()) {
@@ -247,7 +268,7 @@ public class Database extends LifeCycle.Base {
             final int count = stmt.getUpdateCount();
             return count < 0 ? Option.empty() : Option.of(count);
         } catch (Exception ex) {
-            throw new DatabaseException("Failed to execute sql: " + sqlExpression, ex);
+            throw new DatabaseException("Faile d to execute sql: " + sqlExpression, ex);
         } finally {
             IO.close(stmt);
         }

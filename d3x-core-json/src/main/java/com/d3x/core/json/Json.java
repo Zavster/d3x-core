@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.d3x.core.util.Cron;
+import com.d3x.core.util.CronEntry;
 import com.d3x.core.util.Crypto;
 import com.d3x.core.util.Formatter;
 import com.d3x.core.util.Option;
@@ -52,7 +54,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-
 
 /**
  * A utility class that provides some convenience functions over the GSON api
@@ -131,6 +132,41 @@ public class Json {
         return array;
     }
 
+
+    /**
+     * Returns a JsonObject with a header and body to include meta-data
+     * @param schemaType        the schema type name for this message
+     * @param schemaVersion     the schema version for this message
+     * @param consumer          the consumer to construct the message body
+     * @return                  the newly created body
+     */
+    public static JsonObject message(String schemaType, int schemaVersion, Consumer<JsonObject> consumer) {
+        return Json.object(message -> {
+            message.add("header", Json.object(header -> {
+                header.addProperty("schemaType", schemaType);
+                header.addProperty("schemaVersion", schemaVersion);
+            }));
+            message.add("body", Json.object(consumer));
+        });
+    }
+
+
+    /**
+     * Returns a JsonObject with a header and body to include meta-data
+     * @param schemaType        the schema type name for this message
+     * @param schemaVersion     the schema version for this message
+     * @param body              the body for message
+     * @return                  the newly created body
+     */
+    public static JsonObject message(String schemaType, int schemaVersion, JsonElement body) {
+        return Json.object(message -> {
+            message.add("header", Json.object(header -> {
+                header.addProperty("schemaType", schemaType);
+                header.addProperty("schemaVersion", schemaVersion);
+            }));
+            message.add("body", body);
+        });
+    }
 
 
     /**
@@ -448,6 +484,8 @@ public class Json {
         builder.registerTypeAdapter(ZoneId.class, new ZoneIdDeserializer());
         builder.registerTypeAdapter(Year.class, new YearSerializer());
         builder.registerTypeAdapter(Year.class, new YearDeserializer());
+        builder.registerTypeAdapter(Cron.class, new CronSerializer());
+        builder.registerTypeAdapter(Cron.class, new CronDeserializer());
         builder.registerTypeAdapter(TimeZone.class, new TimeZoneSerializer());
         builder.registerTypeAdapter(TimeZone.class, new TimeZoneDeserializer());
         builder.registerTypeAdapter(Currency.class, new CurrencySerializer());
@@ -701,6 +739,50 @@ public class Json {
                 } catch (Exception ex) {
                     throw new RuntimeException("Failed to decrypt password", ex);
                 }
+            }
+        }
+    }
+
+
+    public static class CronSerializer implements JsonSerializer<Cron> {
+        @Override
+        public JsonElement serialize(Cron cron, Type type, JsonSerializationContext context) {
+            if (cron == null) {
+                return JsonNull.INSTANCE;
+            } else {
+                return Json.object(o -> {
+                    o.addProperty("seconds", cron.getSeconds().asString());
+                    o.addProperty("minutes", cron.getMinutes().asString());
+                    o.addProperty("hours", cron.getHours().asString());
+                    o.addProperty("daysOfMonth", cron.getDaysOfMonth().asString());
+                    o.addProperty("months", cron.getMonths().asString());
+                    o.addProperty("daysOfWeek", cron.getDaysOfWeek().asString());
+                    o.addProperty("years", cron.getYears().asString());
+                });
+            }
+        }
+    }
+
+
+    public static class CronDeserializer implements JsonDeserializer<Cron> {
+        @Override
+        public Cron deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            if (json == null || json.equals(JsonNull.INSTANCE)) {
+                return null;
+            } else if (json instanceof JsonPrimitive) {
+                final String expression = json.getAsString();
+                return Cron.parse(expression);
+            } else {
+                final JsonObject object = json.getAsJsonObject();
+                return Cron.builder()
+                        .seconds(CronEntry.parseSeconds(Json.getString(object, "seconds").orElse("0")))
+                        .minutes(CronEntry.parseMinutes(Json.getStringOrFail(object, "minutes")))
+                        .hours(CronEntry.parseHours(Json.getStringOrFail(object, "hours")))
+                        .daysOfMonth(CronEntry.parseDaysOfMonth(Json.getStringOrFail(object, "daysOfMonth")))
+                        .months(CronEntry.parseMonths(Json.getStringOrFail(object, "months")))
+                        .daysOfWeek(CronEntry.parseDaysOfWeek(Json.getStringOrFail(object, "daysOfWeek")))
+                        .years(CronEntry.parseYears(Json.getStringOrFail(object, "years")))
+                        .build();
             }
         }
     }

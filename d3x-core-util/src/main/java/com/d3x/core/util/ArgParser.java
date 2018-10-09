@@ -18,6 +18,7 @@ package com.d3x.core.util;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
@@ -109,6 +110,16 @@ public class ArgParser {
      */
     public Option<Double> getDouble(String option) {
         return getValue(option).map(Double::parseDouble);
+    }
+
+
+    /**
+     * Returns the option value parsed from command line args
+     * @param option        the option to search for
+     * @return              the option value, which could be default
+     */
+    public Option<Duration> getDuration(String option) {
+        return getValue(option).map(Long::parseLong).map(Duration::ofMillis);
     }
 
 

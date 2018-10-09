@@ -41,6 +41,7 @@ public class DatabaseUpdate<T> {
 
     private Type type;
     private Database db;
+    private boolean verbose;
     private Class<T> dataType;
     private Option<String> sql;
     private int batchSize = 1000;
@@ -69,6 +70,17 @@ public class DatabaseUpdate<T> {
      */
     public DatabaseUpdate<T> sql(String sql) {
         this.sql = Option.of(sql);
+        return this;
+    }
+
+
+    /**
+     * Turns verbose logging on/off for this operation
+     * @param verbose   true to enable verbose logging
+     * @return          this update
+     */
+    public DatabaseUpdate<T> verbose(boolean verbose) {
+        this.verbose = verbose;
         return this;
     }
 
@@ -219,7 +231,7 @@ public class DatabaseUpdate<T> {
         Connection conn = null;
         PreparedStatement stmt = null;
         final Calendar calendar = Calendar.getInstance(timeZone);
-        if (log.isDebugEnabled()) log.debug("SQL: " + sql);
+        if (verbose) log.info("SQL(" + timeZone.getID() + "): "  + sql);
         try {
             final long t1 = System.currentTimeMillis();
             final Iterator<T> iterator = stream.iterator();
@@ -228,17 +240,20 @@ public class DatabaseUpdate<T> {
             while (iterator.hasNext()) {
                 count++;
                 final T record = iterator.next();
+                if (verbose) log.info("Binding SQL args from " + record + " to " + sql);
                 binder.bind(record, stmt, calendar);
                 stmt.addBatch();
                 if (count % batchSize == 0) {
                     stmt.executeBatch();
-                    final long t2 = System.currentTimeMillis();
-                    log.info("Put " + count + " records into DB in " + (t2 - t1) + " millis");
+                    if (verbose || batchSize > 1000) {
+                        final long t2 = System.currentTimeMillis();
+                        log.info("Put " + count + " records into DB in " + (t2 - t1) + " millis");
+                    }
                 }
             }
             if (count > 0 && count % batchSize != 0) {
                 stmt.executeBatch();
-                if (count > 10) {
+                if (verbose || batchSize > 1000) {
                     final long t2 = System.currentTimeMillis();
                     log.info("Put " + count + " records into DB in " + (t2 - t1) + " millis");
                 }

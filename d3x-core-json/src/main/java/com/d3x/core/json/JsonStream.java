@@ -42,20 +42,20 @@ import com.google.gson.stream.JsonWriter;
  */
 public class JsonStream {
 
-    private static final Map<String,Type> schemaTypeMap = new HashMap<>();
-    private static final Map<Type,String> schemaNameMap = new HashMap<>();
+    private static final Map<String,Type> schemaDataTypeMap = new HashMap<>();
+    private static final Map<Type,String> schemaTypeNameMap = new HashMap<>();
 
 
     /**
      * Registers the schema name for a data type to be wrapped in a JsonMessage
-     * @param type          the data type
-     * @param schemaName    the schema name for type
+     * @param dataType      the data type
+     * @param schemaType    the schema name for type
      */
-    public static <T> void register(Type type, String schemaName) {
-        Objects.requireNonNull(type, "The type cannot be null");
-        Objects.requireNonNull(schemaName, "The schema name cannot be null");
-        schemaTypeMap.put(schemaName, type);
-        schemaNameMap.put(type, schemaName);
+    public static <T> void register(Type dataType, String schemaType) {
+        Objects.requireNonNull(dataType, "The type cannot be null");
+        Objects.requireNonNull(schemaType, "The schema name cannot be null");
+        schemaDataTypeMap.put(schemaType, dataType);
+        schemaTypeNameMap.put(dataType, schemaType);
     }
 
 
@@ -117,21 +117,21 @@ public class JsonStream {
                     throw new RuntimeException("Malformed message, expected header");
                 }
                 final Header header = gson.fromJson(reader, Header.class);
-                final String schemaName = header.getSchemaName();
-                final Type schemaType = schemaTypeMap.get(schemaName);
-                if (schemaType == null) {
-                    throw new RuntimeException("No schema type registered for name: " + schemaName);
+                final String schemaType = header.getSchemaType();
+                final Type dataType = schemaDataTypeMap.get(schemaType);
+                if (dataType == null) {
+                    throw new RuntimeException("No schema type registered for name: " + schemaType);
                 } else {
                     final String nextName = reader.nextName();
                     if (!nextName.equalsIgnoreCase("body")) {
                         throw new RuntimeException("Malformed message, expected body");
                     } else {
                         try {
-                            final T body = gson.fromJson(reader, schemaType);
+                            final T body = gson.fromJson(reader, dataType);
                             messages.add(body);
 
                         } catch (Exception ex) {
-                            throw new RuntimeException("Failed to parse body of message for type: " + schemaType, ex);
+                            throw new RuntimeException("Failed to parse body of message for type: " + dataType, ex);
                         }
                     }
                 }
@@ -172,14 +172,14 @@ public class JsonStream {
                 while (values.hasNext()) {
                     final T value = values.next();
                     final Class<?> type = value.getClass();
-                    final String schemaName = schemaNameMap.get(type);
-                    if (schemaName == null) {
+                    final String schemaType = schemaTypeNameMap.get(type);
+                    if (schemaType == null) {
                         throw new RuntimeException("No schema type registered for " + type);
                     } else {
                         writer.beginObject();
                         writer.name("header");
                         writer.beginObject();
-                        writer.name("schemaName").value(schemaName);
+                        writer.name("schemaType").value(schemaType);
                         writer.name("schemaVersion").value(1);
                         writer.endObject();
                         writer.name("body");
@@ -207,8 +207,8 @@ public class JsonStream {
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
     public static class Header {
-        /** The schema name */
-        @lombok.Getter @lombok.NonNull private String schemaName;
+        /** The schema type name */
+        @lombok.Getter @lombok.NonNull private String schemaType;
         /** The schema version */
         @lombok.Getter private int schemaVersion;
     }

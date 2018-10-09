@@ -15,6 +15,8 @@
  */
 package com.d3x.core.db;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -26,24 +28,49 @@ import java.util.Objects;
 @lombok.EqualsAndHashCode(of={"driverClassName"})
 public class DatabaseDriver {
 
-    public static final DatabaseDriver H2 = new DatabaseDriver("org.h2.Driver");
-    public static final DatabaseDriver MYSQL = new DatabaseDriver("com.mysql.jdbc.Driver");
-    public static final DatabaseDriver MARIADB = new DatabaseDriver("com.mariadb.jdbc.Driver");
-    public static final DatabaseDriver MSSQL = new DatabaseDriver("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-    public static final DatabaseDriver SYBASE = new DatabaseDriver("net.sourceforge.jtds.jdbc.Driver");
-    public static final DatabaseDriver ORACLE = new DatabaseDriver("oracle.jdbc.OracleDriver");
+    private static final Map<String,DatabaseDriver> driverMap = new HashMap<>();
 
-    @lombok.Getter @lombok.NonNull
-    private String driverClassName;
+    public enum Type {
+        H2, MYSQL, MARIADB, MSSQL, SYBASE, ORACLE, GENERIC
+    }
+
+
+    public static final DatabaseDriver H2 = new DatabaseDriver(Type.H2, "org.h2.Driver");
+    public static final DatabaseDriver MYSQL = new DatabaseDriver(Type.MSSQL, "com.mysql.jdbc.Driver");
+    public static final DatabaseDriver MARIADB = new DatabaseDriver(Type.MARIADB, "com.mariadb.jdbc.Driver");
+    public static final DatabaseDriver MSSQL = new DatabaseDriver(Type.MSSQL, "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+    public static final DatabaseDriver SYBASE = new DatabaseDriver(Type.SYBASE, "net.sourceforge.jtds.jdbc.Driver");
+    public static final DatabaseDriver ORACLE = new DatabaseDriver(Type.ORACLE, "oracle.jdbc.OracleDriver");
+
+    /** The database type */
+    @lombok.Getter @lombok.NonNull private Type type;
+    /** The driver class name */
+    @lombok.Getter @lombok.NonNull private String driverClassName;
+
 
     /**
      * Constructor
+     * @param type              the database type
      * @param driverClassName   the driver class name
      */
-    public DatabaseDriver(String driverClassName) {
-        Objects.requireNonNull(driverClassName, "The class name cannot be null");
+    public DatabaseDriver(Type type, String driverClassName) {
+        Objects.requireNonNull(type, "The database type cannot be null");
+        Objects.requireNonNull(driverClassName, "The driver class name cannot be null");
+        this.type = type;
         this.driverClassName = driverClassName;
+        driverMap.put(driverClassName, this);
     }
+
+
+    /**
+     * Returns the driver for the driver class name provided
+     * @param driverClassName   the JDBC driver class name
+     * @return                  the driver
+     */
+    public static DatabaseDriver of(String driverClassName) {
+        return driverMap.computeIfAbsent(driverClassName, (key) -> new DatabaseDriver(Type.GENERIC, key));
+    }
+
 
     /**
      * Returns true if the driver is available on the classpath

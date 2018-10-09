@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * @author Xavier Witdouck
  */
 @lombok.extern.slf4j.Slf4j
-public class Modules implements LifeCycle {
+public class Modules extends LifeCycle.Base {
 
     private Map<Class<?>,Object> moduleMap = new LinkedHashMap<>();
 
@@ -56,7 +56,7 @@ public class Modules implements LifeCycle {
 
 
     @Override
-    public synchronized void start() {
+    protected void doStart() throws RuntimeException {
         final long t1 = System.currentTimeMillis();
         final List<Object> modules = list();
         final long t2 = System.currentTimeMillis();
@@ -65,7 +65,7 @@ public class Modules implements LifeCycle {
 
 
     @Override
-    public synchronized void stop() {
+    protected void doStop() throws RuntimeException {
         final long t1 = System.currentTimeMillis();
         final List<Object> modules = list();
         modules.stream().filter(m -> m instanceof LifeCycle).forEach(m -> ((LifeCycle)m).stop());

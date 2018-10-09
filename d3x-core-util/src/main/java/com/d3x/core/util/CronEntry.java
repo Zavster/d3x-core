@@ -42,9 +42,9 @@ public abstract class CronEntry  {
         MINUTES(0, 59),
         HOURS(0, 23),
         MONTH(1, 12),
-        YEARS(0, 10000),
+        YEARS(1900, 3000),
         DOM(1, 31),
-        DOW(0, 6);
+        DOW(1, 7);
 
         private int min;
         private int max;
@@ -86,13 +86,13 @@ public abstract class CronEntry  {
      * Static initializer
      */
     static {
-        dayOfWeekMap.put("sun", 0);
         dayOfWeekMap.put("mon", 1);
         dayOfWeekMap.put("tue", 2);
         dayOfWeekMap.put("wed", 3);
         dayOfWeekMap.put("thu", 4);
         dayOfWeekMap.put("fri", 5);
         dayOfWeekMap.put("sat", 6);
+        dayOfWeekMap.put("sun", 7);
     }
 
 
@@ -111,6 +111,12 @@ public abstract class CronEntry  {
     public Type getType() {
         return type;
     }
+
+    /**
+     * Returns the string representation of this entry
+     * @return  the string representation
+     */
+    public abstract String asString();
 
     /**
      * Returns a stream over the values for this entry
@@ -156,7 +162,7 @@ public abstract class CronEntry  {
      * @param entries   the entries for composite
      * @return          the newly created entry
      */
-    static CronEntry composite(Type type, Stream<CronEntry> entries) {
+    public static CronEntry composite(Type type, Stream<CronEntry> entries) {
         return new Composite(type, entries.collect(Collectors.toList()));
     }
 
@@ -166,7 +172,7 @@ public abstract class CronEntry  {
      * @param token the token to parse (eg 12 or 0,2,3 or 0-10/2 or 0,2,3,5-10/2 etc...)
      * @return      the cron entry
      */
-    static CronEntry parseSeconds(String token) {
+    public static CronEntry parseSeconds(String token) {
         return parse(token, Type.SECONDS);
     }
 
@@ -176,7 +182,7 @@ public abstract class CronEntry  {
      * @param token the token to parse (eg 12 or 0,2,3 or 0-10/2 or 0,2,3,5-10/2 etc...)
      * @return      the cron entry
      */
-    static CronEntry parseMinutes(String token) {
+    public static CronEntry parseMinutes(String token) {
         return parse(token, Type.MINUTES);
     }
 
@@ -186,7 +192,7 @@ public abstract class CronEntry  {
      * @param token the token to parse (eg 12 or 0,2,3 or 0-10/2 or 0,2,3,5-10/2 etc...)
      * @return      the cron entry
      */
-    static CronEntry parseHours(String token) {
+    public static CronEntry parseHours(String token) {
         return parse(token, Type.HOURS);
     }
 
@@ -196,7 +202,7 @@ public abstract class CronEntry  {
      * @param token the token to parse (eg 12 or 1,2,3 or 1-10/2 or 1,2,3,5-10/2 etc...)
      * @return      the cron entry
      */
-    static CronEntry parseDaysOfMonth(String token) {
+    public static CronEntry parseDaysOfMonth(String token) {
         return parse(token, Type.DOM);
     }
 
@@ -206,7 +212,7 @@ public abstract class CronEntry  {
      * @param token the token to parse (eg 12 or 1,2,3 or 1-10/2 or 1,2,3,5-10/2 etc...)
      * @return      the cron entry
      */
-    static CronEntry parseMonths(String token) {
+    public static CronEntry parseMonths(String token) {
         return parse(token, Type.MONTH);
     }
 
@@ -216,7 +222,7 @@ public abstract class CronEntry  {
      * @param token the token to parse (eg 12 or 1,2,3 or 1-10/2 or 1,2,3,5-10/2 etc...)
      * @return      the cron entry
      */
-    static CronEntry parseYears(String token) {
+    public static CronEntry parseYears(String token) {
         return parse(token, Type.YEARS);
     }
 
@@ -226,7 +232,7 @@ public abstract class CronEntry  {
      * @param token the token to parse (eg 2 or mon or mon,tue,wed or 0-6/2 or mon,tue,3-6/1 etc...)
      * @return      the cron entry
      */
-    static CronEntry parseDaysOfWeek(String token) {
+    public static CronEntry parseDaysOfWeek(String token) {
         return parse(token, Type.DOW);
     }
 
@@ -237,7 +243,7 @@ public abstract class CronEntry  {
      * @param type  the type for this token
      * @return      the cron entry
      */
-    static CronEntry parse(String token, Type type) {
+    public static CronEntry parse(String token, Type type) {
         final Stream<String> stream = Arrays.stream(token.split(",")).map(String::trim).map(String::toLowerCase);
         final List<String> items = stream.collect(Collectors.toList());
         if (items.size() > 1) {
@@ -324,6 +330,11 @@ public abstract class CronEntry  {
             }
         }
 
+        @Override
+        public String asString() {
+            return String.valueOf(value);
+        }
+
         @Override()
         public IntStream values() {
             return IntStream.of(value);
@@ -359,12 +370,25 @@ public abstract class CronEntry  {
             this.start = start;
             this.end = end;
             this.step = step;
-            if (start > end) {
+            if (step <= 0) {
+                throw new RuntimeException("The step value for range must be > 0");
+            } else if (start > end) {
                 throw new RuntimeException("Malformed cron entry; start must be <= end: " + start + " > " + end);
             } else if (start < type.min) {
                 throw new RuntimeException("Malformed cron entry; " + start + " out of bounds for " + type.name());
             } else if (end > type.max) {
-                throw new RuntimeException("Malformed cron entry; " + start + " out of bounds for " + type.name());
+                throw new RuntimeException("Malformed cron entry; " + end + " out of bounds for " + type.name());
+            }
+        }
+
+        @Override
+        public String asString() {
+            if (step != 1) {
+                return String.format("%s-%s/%s", start, end, step);
+            } else if (start != getType().min || end != getType().max) {
+                return String.format("%s-%s", start, end);
+            } else {
+                return "*";
             }
         }
 
@@ -400,6 +424,11 @@ public abstract class CronEntry  {
             if (!entries.stream().allMatch(v -> v.getType() == type)) {
                 throw new IllegalArgumentException("Types for composite entry must match: " + type);
             }
+        }
+
+        @Override
+        public String asString() {
+            return String.join(",", entries.stream().map(CronEntry::asString).collect(Collectors.toList()));
         }
 
         @Override()

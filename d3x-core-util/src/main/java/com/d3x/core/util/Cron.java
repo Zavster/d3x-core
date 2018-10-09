@@ -23,7 +23,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
@@ -35,31 +34,32 @@ import java.util.stream.StreamSupport;
 /**
  * Capture the scheduling data for a task in the form of a CRON like expression
  *
- * <hours> <dayOfMonth> <month> <year>
- * <minutes> <hours> <dayOfMonth> <month> <year>
- * <seconds> <minutes> <hours> <dayOfMonth> <month> <year>
- * <seconds> <minutes> <hours> <dayOfWeek> <dayOfMonth> <month> <year>
+ * <hours> <dayOfMonth> <month> <dayOfWeek> <year>
+ * <minutes> <hours> <dayOfMonth> <month> <dayOfWeek> <year>
+ * <seconds> <minutes> <hours> <dayOfMonth> <month> <dayOfWeek> <year>
  *
  * @author Xavier Witdouck
  */
 @lombok.Builder()
+@lombok.ToString()
+@lombok.EqualsAndHashCode()
 @lombok.AllArgsConstructor()
 public class Cron {
 
     /** The second specification for cron */
-    @lombok.NonNull private CronEntry seconds;
+    @lombok.NonNull @lombok.Getter private CronEntry seconds;
     /** The minute specification for cron */
-    @lombok.NonNull private CronEntry minutes;
+    @lombok.NonNull @lombok.Getter private CronEntry minutes;
     /** The hour specification for cron */
-    @lombok.NonNull private CronEntry hours;
+    @lombok.NonNull @lombok.Getter private CronEntry hours;
     /** The day of month specification for cron */
-    @lombok.NonNull private CronEntry daysOfMonth;
+    @lombok.NonNull @lombok.Getter private CronEntry daysOfMonth;
     /** The day of week specification for cron */
-    @lombok.NonNull private CronEntry daysOfWeek;
+    @lombok.NonNull @lombok.Getter private CronEntry daysOfWeek;
     /** The month specification for cron */
-    @lombok.NonNull private CronEntry months;
+    @lombok.NonNull @lombok.Getter private CronEntry months;
     /** The years specification for cron */
-    @lombok.NonNull private CronEntry years;
+    @lombok.NonNull @lombok.Getter private CronEntry years;
 
 
     /**
@@ -76,9 +76,9 @@ public class Cron {
                     .seconds(CronEntry.parseSeconds(tokens.get(0)))
                     .minutes(CronEntry.parseMinutes(tokens.get(1)))
                     .hours(CronEntry.parseHours(tokens.get(2)))
-                    .daysOfWeek(CronEntry.parseDaysOfWeek(tokens.get(3)))
-                    .daysOfMonth(CronEntry.parseDaysOfMonth(tokens.get(4)))
-                    .months(CronEntry.parseMonths(tokens.get(5)))
+                    .daysOfMonth(CronEntry.parseDaysOfMonth(tokens.get(3)))
+                    .months(CronEntry.parseMonths(tokens.get(4)))
+                    .daysOfWeek(CronEntry.parseDaysOfWeek(tokens.get(5)))
                     .years(CronEntry.parseYears(tokens.get(6)))
                     .build();
         }
@@ -94,15 +94,29 @@ public class Cron {
         final String[] tokens = expression.split("\\s+");
         if (tokens.length == 7) {
             return Arrays.asList(tokens);
-        } else if (tokens.length == 4) {
-            return List.of("0", "0", tokens[0], "*", tokens[1], tokens[2], tokens[3]);
         } else if (tokens.length == 5) {
-            return List.of("0", tokens[0], tokens[1], "*", tokens[2], tokens[3], tokens[4]);
+            return List.of("0", "0", tokens[0], tokens[1], tokens[2], tokens[3]);
         } else if (tokens.length == 6) {
-            return List.of(tokens[0], tokens[1], tokens[2], "*", tokens[3], tokens[4], tokens[5]);
+            return List.of("0", tokens[0], tokens[1], tokens[2], tokens[2], tokens[3], tokens[4]);
         } else {
             throw new RuntimeException("Malformed cron expression, cannot parse: " + expression);
         }
+    }
+
+    /**
+     * Returns the CRON expression for this entity
+     * @return  the CRON expression
+     */
+    public String getExpression() {
+        return String.join(" ", Arrays.asList(
+                seconds.asString(),
+                minutes.asString(),
+                hours.asString(),
+                daysOfWeek.asString(),
+                daysOfMonth.asString(),
+                months.asString(),
+                years.asString()
+        ));
     }
 
 
@@ -163,13 +177,13 @@ public class Cron {
      */
     private int getCronDayOfWeek(int dayOfWeek) {
         switch (dayOfWeek) {
-            case Calendar.SUNDAY:       return 0;
             case Calendar.MONDAY:       return 1;
             case Calendar.TUESDAY:      return 2;
             case Calendar.WEDNESDAY:    return 3;
             case Calendar.THURSDAY:     return 4;
             case Calendar.FRIDAY:       return 5;
             case Calendar.SATURDAY:     return 6;
+            case Calendar.SUNDAY:       return 7;
             default: throw new IllegalArgumentException("Day of week out of range: " + dayOfWeek);
         }
     }

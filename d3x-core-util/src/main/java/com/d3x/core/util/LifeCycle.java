@@ -36,6 +36,35 @@ public interface LifeCycle {
      */
     void stop() throws RuntimeException;
 
+    /**
+     * Returns true if this component has been started
+     * @return  true if component started
+     */
+    boolean isStarted();
+
+
+    /**
+     * Convenience method to start an array of LifeCycle objects
+     * @param values    the values to start
+     */
+    static void start(LifeCycle... values) {
+        for (LifeCycle value : values) {
+            value.start();
+        }
+    }
+
+
+    /**
+     * Convenience method to start an array of LifeCycle objects
+     * @param values    the values to start
+     */
+    static void stop(LifeCycle... values) {
+        for (LifeCycle value : values) {
+            value.stop();;
+        }
+    }
+
+
 
     /**
      * A convenience base class for implement components with a LifeCycle that ensures idempotent behaviour
@@ -43,14 +72,6 @@ public interface LifeCycle {
     abstract class Base implements LifeCycle {
 
         private boolean started;
-
-        /**
-         * Returns true if this component has been started
-         * @return      true if component started
-         */
-        public synchronized boolean isStarted() {
-            return started;
-        }
 
         /**
          * Implement start logic for component
@@ -63,6 +84,11 @@ public interface LifeCycle {
          * @throws RuntimeException if fails to stop gracefully
          */
         protected void doStop() throws RuntimeException { }
+
+        @Override()
+        public synchronized boolean isStarted() {
+            return started;
+        }
 
 
         @Override

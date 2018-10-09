@@ -40,13 +40,13 @@ public class CronEntryTests {
         Assert.assertEquals(CronEntry.parseMonths("3"), CronEntry.scalar(CronEntry.Type.MONTH, 3));
         Assert.assertEquals(CronEntry.parseMonths("mar"), CronEntry.scalar(CronEntry.Type.MONTH, 3));
         Assert.assertEquals(CronEntry.parseYears("2018"), CronEntry.scalar(CronEntry.Type.YEARS, 2018));
-        Assert.assertEquals(CronEntry.parseDaysOfWeek("sun"), CronEntry.scalar(CronEntry.Type.DOW, 0));
         Assert.assertEquals(CronEntry.parseDaysOfWeek("mon"), CronEntry.scalar(CronEntry.Type.DOW, 1));
         Assert.assertEquals(CronEntry.parseDaysOfWeek("tue"), CronEntry.scalar(CronEntry.Type.DOW, 2));
         Assert.assertEquals(CronEntry.parseDaysOfWeek("wed"), CronEntry.scalar(CronEntry.Type.DOW, 3));
         Assert.assertEquals(CronEntry.parseDaysOfWeek("thu"), CronEntry.scalar(CronEntry.Type.DOW, 4));
         Assert.assertEquals(CronEntry.parseDaysOfWeek("fri"), CronEntry.scalar(CronEntry.Type.DOW, 5));
         Assert.assertEquals(CronEntry.parseDaysOfWeek("sat"), CronEntry.scalar(CronEntry.Type.DOW, 6));
+        Assert.assertEquals(CronEntry.parseDaysOfWeek("sun"), CronEntry.scalar(CronEntry.Type.DOW, 7));
         Assert.assertEquals(CronEntry.parseMonths("jan"), CronEntry.scalar(CronEntry.Type.MONTH, 1));
         Assert.assertEquals(CronEntry.parseMonths("feb"), CronEntry.scalar(CronEntry.Type.MONTH, 2));
         Assert.assertEquals(CronEntry.parseMonths("mar"), CronEntry.scalar(CronEntry.Type.MONTH, 3));
@@ -102,10 +102,10 @@ public class CronEntryTests {
                 { "0-10/2", CronEntry.Type.MINUTES, CronEntry.range(CronEntry.Type.MINUTES, 0, 10, 2) },
                 { "0-10", CronEntry.Type.HOURS, CronEntry.range(CronEntry.Type.HOURS, 0, 10, 1) },
                 { "0-10/2", CronEntry.Type.HOURS, CronEntry.range(CronEntry.Type.HOURS, 0, 10, 2) },
-                { "0-6", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 0, 6, 1) },
-                { "0-6/2", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 0, 6, 2) },
-                { "sun-sat", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 0, 6, 1) },
-                { "sun-sat/2", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 0, 6, 2) },
+                { "1-7", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 1, 7, 1) },
+                { "1-7/2", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 1, 7, 2) },
+                { "mon-sun", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 1, 7, 1) },
+                { "mon-sun/2", CronEntry.Type.DOW, CronEntry.range(CronEntry.Type.DOW, 1, 7, 2) },
                 { "1-6", CronEntry.Type.MONTH, CronEntry.range(CronEntry.Type.MONTH, 1, 6, 1) },
                 { "1-6/2", CronEntry.Type.MONTH, CronEntry.range(CronEntry.Type.MONTH, 1, 6, 2) },
                 { "jan-jun", CronEntry.Type.MONTH, CronEntry.range(CronEntry.Type.MONTH, 1, 6, 1) },

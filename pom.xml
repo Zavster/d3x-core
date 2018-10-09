@@ -22,14 +22,13 @@
 
     <groupId>com.d3xsystems</groupId>
     <artifactId>d3x-core</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.8</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>d3x-core-db/pom.xml</module>
         <module>d3x-core-http-client/pom.xml</module>
         <module>d3x-core-mail/pom.xml</module>
-        <module>d3x-core-templates/pom.xml</module>
         <module>d3x-core-util/pom.xml</module>
         <module>d3x-core-json/pom.xml</module>
     </modules>
