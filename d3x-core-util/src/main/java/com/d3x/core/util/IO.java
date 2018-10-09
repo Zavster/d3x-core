@@ -17,6 +17,7 @@ package com.d3x.core.util;
 
 import java.io.*;
 import java.net.NetworkInterface;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.file.Files;
 import java.security.CodeSource;
@@ -52,6 +53,22 @@ public class IO {
      */
     public static void println(Object value) {
         System.out.println(value);
+    }
+
+
+    /**
+     * Returns a free port that can be used to listen on
+     * @return  a randomly assigned free port to listen
+     * @throws IOException  if fails to initialize server socket
+     */
+    public static int freePort() throws IOException {
+        ServerSocket socket = null;
+        try {
+            socket = new ServerSocket(0);
+            return socket.getLocalPort();
+        } finally {
+            IO.close(socket);
+        }
     }
 
 
@@ -168,6 +185,43 @@ public class IO {
      */
     public static String readText(InputStream is) throws IOException {
         return readText(is, 1024 * 100);
+    }
+
+
+    /**
+     * Reads bytes from the reader as text
+     * @param reader        the reader
+     * @return              the resulting text
+     * @throws IOException  if there is an I/O exception
+     */
+    public static String readText(Reader reader) throws IOException {
+        return readText(reader, 1024 * 100);
+    }
+
+    /**
+     * Reads bytes from the reader as text
+     * @param reader        the reader
+     * @param bufferSize    the size of the byte buffer
+     * @return              the resulting text
+     * @throws IOException  if there is an I/O exception
+     */
+    public static String readText(Reader reader, int bufferSize) throws IOException {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(reader);
+            final char[] buffer = new char[bufferSize];
+            final StringBuilder result = new StringBuilder();
+            while (true) {
+                final int read = br.read(buffer);
+                if (read < 0) break;
+                else {
+                    result.append(new String(buffer, 0, read));
+                }
+            }
+            return result.toString();
+        } finally {
+            IO.close(br);
+        }
     }
 
 

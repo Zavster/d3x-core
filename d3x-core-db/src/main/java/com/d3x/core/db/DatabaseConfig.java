@@ -158,7 +158,7 @@ public class DatabaseConfig {
             } else {
                 final JsonObject db = (JsonObject)json;
                 return DatabaseConfig.builder()
-                    .driver(new DatabaseDriver(Json.getStringOrFail(db, "driver")))
+                    .driver(DatabaseDriver.of(Json.getStringOrFail(db, "driver")))
                     .url(Json.getStringOrFail(db, "url"))
                     .user(Json.getString(db, "user"))
                     .password(Json.getElement(db, "password").map(e -> context.deserialize(e, Password.class)))

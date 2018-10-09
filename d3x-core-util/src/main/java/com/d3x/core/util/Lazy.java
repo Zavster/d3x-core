@@ -92,4 +92,12 @@ public class Lazy<T> {
             return value;
         }
     }
+
+    /**
+     * Returns the value for this Lazy as an option
+     * @return  the Option over this value
+     */
+    public Option<T> toOption() {
+        return Option.of(this).map(Lazy::get);
+    }
 }

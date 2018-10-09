@@ -15,6 +15,7 @@
  */
 package com.d3x.core.json;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -33,6 +34,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.d3x.core.util.Cron;
 import com.d3x.core.util.Crypto;
 import com.d3x.core.util.Formatter;
 import com.d3x.core.util.Generic;
@@ -159,6 +161,29 @@ public class JsonTests {
         String jsonString = new String(bytes.toByteArray());
         List<Payload> actual = gson.fromJson(jsonString, Generic.of(List.class, Payload.class));
         Assert.assertEquals(actual, expected);
+    }
+
+
+    @Test()
+    public void message() throws IOException {
+        JsonStream.register(Payload.class, "payload");
+        Gson gson = Json.createGsonBuilder(Option.empty()).create();
+        List<Payload> payloads = IntStream.range(0, 10).mapToObj(i -> Payload.random()).collect(Collectors.toList());
+        List<JsonObject> messages = payloads.stream().map(gson::toJsonTree).map(v -> Json.message("payload", 1, v)).collect(Collectors.toList());
+        String jsonString = gson.toJson(messages);
+        List<Object> results = JsonStream.reader(gson).list(new ByteArrayInputStream(jsonString.getBytes()));
+        Assert.assertEquals(results, payloads);
+    }
+
+
+    @Test()
+    public void cron() {
+        Gson gson = Json.createGsonBuilder(Option.empty()).setPrettyPrinting().create();
+        Cron expected = Cron.parse("0 0-59/5 13,14,15 * jan-mar mon-fri 2018");
+        String jsonString = gson.toJson(expected);
+        IO.println(jsonString);
+        Cron result = gson.fromJson(jsonString, Cron.class);
+        Assert.assertEquals(result, expected);
     }
 
 
