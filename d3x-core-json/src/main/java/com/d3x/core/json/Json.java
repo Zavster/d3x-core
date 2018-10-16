@@ -790,13 +790,14 @@ public class Json {
 
 
     public static class DurationDeserializer implements JsonDeserializer<Duration> {
+        private static final String decimal = "(\\d+(\\.\\d+)?)";
         private static final Pattern numberPattern = Pattern.compile("\\d+");
-        private static final Pattern decimalPattern = Pattern.compile("\\d+\\.?\\d?");
-        private static final Pattern secondPattern = Pattern.compile("(\\d+\\.?\\d?)\\s*(s|sec)", Pattern.CASE_INSENSITIVE);
-        private static final Pattern minutePattern = Pattern.compile("(\\d+\\.?\\d?)\\s*(m|min)", Pattern.CASE_INSENSITIVE);
-        private static final Pattern hourPattern = Pattern.compile("(\\d+\\.?\\d?)\\s*(h|hr)", Pattern.CASE_INSENSITIVE);
-        private static final Pattern dayPattern = Pattern.compile("(\\d+\\.?\\d?)\\s*(d|days?)", Pattern.CASE_INSENSITIVE);
-        private static final Pattern millisPattern = Pattern.compile("(\\d+\\.?\\d?)\\s*(ms|millis)", Pattern.CASE_INSENSITIVE);
+        private static final Pattern decimalPattern = Pattern.compile(decimal);
+        private static final Pattern secondPattern = Pattern.compile(decimal + "\\s*(s|sec)", Pattern.CASE_INSENSITIVE);
+        private static final Pattern minutePattern = Pattern.compile(decimal + "\\s*(m|min)", Pattern.CASE_INSENSITIVE);
+        private static final Pattern hourPattern = Pattern.compile(decimal + "\\s*(h|hr)", Pattern.CASE_INSENSITIVE);
+        private static final Pattern dayPattern = Pattern.compile(decimal + "\\s*(d|days?)", Pattern.CASE_INSENSITIVE);
+        private static final Pattern millisPattern = Pattern.compile(decimal + "\\s*(ms|millis)", Pattern.CASE_INSENSITIVE);
         @Override
         public Duration deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
             if (json == JsonNull.INSTANCE) {

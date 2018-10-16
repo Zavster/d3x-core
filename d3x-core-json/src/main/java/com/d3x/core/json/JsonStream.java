@@ -17,6 +17,7 @@ package com.d3x.core.json;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +33,10 @@ import java.util.Objects;
 
 import com.d3x.core.util.IO;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.TypeAdapter;
+import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
@@ -108,38 +113,41 @@ public class JsonStream {
 
         @SuppressWarnings("unchecked")
         public List<T> list(InputStream is) throws IOException {
-            final List<T> messages = new ArrayList<>();
-            final JsonReader reader = new JsonReader(new InputStreamReader(new BufferedInputStream(is), "UTF-8"));
-            reader.beginArray();
-            while (reader.hasNext()) {
-                reader.beginObject();
-                if (!reader.nextName().equalsIgnoreCase("header")) {
-                    throw new RuntimeException("Malformed message, expected header");
-                }
-                final Header header = gson.fromJson(reader, Header.class);
-                final String schemaType = header.getSchemaType();
+            return list(new InputStreamReader(new BufferedInputStream(is)));
+        }
+
+
+        @SuppressWarnings("unchecked")
+        public List<T> list(java.io.Reader reader) throws IOException {
+            final List<T> results = new ArrayList<>();
+            final JsonReader jsonReader = new JsonReader(new BufferedReader(reader));
+            jsonReader.beginArray();
+            while (jsonReader.hasNext()) {
+                final JsonObject next = gson.fromJson(jsonReader, JsonObject.class);
+                final JsonObject header = Json.getObjectOrFail(next, "header");
+                final String schemaType = Json.getStringOrFail(header, "schemaType");
                 final Type dataType = schemaDataTypeMap.get(schemaType);
                 if (dataType == null) {
                     throw new RuntimeException("No schema type registered for name: " + schemaType);
                 } else {
-                    final String nextName = reader.nextName();
-                    if (!nextName.equalsIgnoreCase("body")) {
-                        throw new RuntimeException("Malformed message, expected body");
-                    } else {
-                        try {
-                            final T body = gson.fromJson(reader, dataType);
-                            messages.add(body);
-
-                        } catch (Exception ex) {
-                            throw new RuntimeException("Failed to parse body of message for type: " + dataType, ex);
+                    try {
+                        final TypeAdapter adapter = gson.getAdapter((Class<?>)dataType);
+                        if (adapter instanceof ReflectiveTypeAdapterFactory.Adapter) {
+                            final JsonElement body = Json.getElementOrFail(next, "body");
+                            final T result = gson.fromJson(body, dataType);
+                            results.add(result);
+                        } else {
+                            final T result = gson.fromJson(next, dataType);
+                            results.add(result);
                         }
+                    } catch (Exception ex) {
+                        throw new RuntimeException("Failed to parse of message: " + gson.toJson(next), ex);
                     }
                 }
-                reader.endObject();
             }
-            reader.endArray();
-            reader.close();
-            return messages;
+            jsonReader.endArray();
+            jsonReader.close();
+            return results;
         }
     }
 

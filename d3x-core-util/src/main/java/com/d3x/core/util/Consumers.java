@@ -28,15 +28,23 @@ import java.util.function.Consumer;
  */
 public class Consumers<T> {
 
-    private List<Consumer<T>> consumers = new ArrayList<>();
+    private Consumer[] consumers = new Consumer[0];
+    private List<Consumer<T>> consumerList = new ArrayList<>();
 
     /**
      * Notifies all registered consumers of the value
      * @param value the value reference
      */
+    @SuppressWarnings("unchecked")
     public void accept(T value) {
         Objects.requireNonNull(value, "The value cannot be null");
-        this.consumers.forEach(consumer -> consumer.accept(value));
+        for (Consumer consumer : consumers) {
+            try {
+                consumer.accept(value);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -45,7 +53,8 @@ public class Consumers<T> {
      */
     public void attach(Consumer<T> consumer) {
         Objects.requireNonNull(consumer, "The consumer cannot be null");
-        this.consumers.add(consumer);
+        this.consumerList.add(consumer);
+        this.consumers = consumerList.toArray(new Consumer[0]);
     }
 
     /**
@@ -54,7 +63,8 @@ public class Consumers<T> {
      */
     public void detach(Consumer<T> consumer) {
         Objects.requireNonNull(consumer, "The consumer cannot be null");
-        this.consumers.remove(consumer);
+        this.consumerList.remove(consumer);
+        this.consumers = consumerList.toArray(new Consumer[0]);
     }
 
 }

@@ -60,7 +60,11 @@ public interface LifeCycle {
      */
     static void stop(LifeCycle... values) {
         for (LifeCycle value : values) {
-            value.stop();;
+            try {
+                value.stop();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -97,7 +101,7 @@ public interface LifeCycle {
                 try {
                     this.doStart();
                     this.started = true;
-                } catch (RuntimeException ex) {
+                } catch (Exception ex) {
                     this.doStop();
                     this.started = false;
                     throw ex;

@@ -168,7 +168,6 @@ public class Collect {
     }
 
 
-
     /**
      * Returns a new Set of the values specified
      * @param values    the values to create a new Set from
@@ -182,6 +181,7 @@ public class Collect {
         return result;
     }
 
+
     /**
      * Returns a new Set of the values specified
      * @param values    the values to create a new Set from
@@ -190,6 +190,32 @@ public class Collect {
      */
     @SafeVarargs
     public static <T> SortedSet<T> asSortedSet(T... values) {
+        final SortedSet<T> result = new TreeSet<>();
+        for (T value : values) result.add(value);
+        return result;
+    }
+
+
+    /**
+     * Returns a new Set of the values specified
+     * @param values    the values to create a new Set from
+     * @param <T>       the element type
+     * @return          the newly created set
+     */
+    public static <T> Set<T> asSet(Iterable<T> values) {
+        final SortedSet<T> result = new TreeSet<>();
+        for (T value : values) result.add(value);
+        return result;
+    }
+
+
+    /**
+     * Returns a new SortedSet of the values specified
+     * @param values    the values to create a new SortedSet from
+     * @param <T>       the element type
+     * @return          the newly created set
+     */
+    public static <T> SortedSet<T> asSortedSet(Iterable<T> values) {
         final SortedSet<T> result = new TreeSet<>();
         for (T value : values) result.add(value);
         return result;
