@@ -19,6 +19,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -40,6 +41,68 @@ public interface JsonWritable {
      */
     void write(JsonWriter writer) throws IOException;
 
+
+    /**
+     * Returns a JSON string representation of this object
+     * @return              the JSON string
+     */
+    default String toJsonString() {
+        return toJsonString(true, "  ");
+    }
+
+
+    /**
+     * Returns a JsonWritable that includes a schema type and version in a header
+     * @param schemaType        the schema type to include in output
+     * @param schemaVersion     the schema version to include in output
+     * @return                  the JsonWritable wrapper
+     */
+    default JsonWritable withSchema(String schemaType, int schemaVersion) {
+        final JsonWritable target = this;
+        return (writer) -> {
+            writer.beginObject();
+            writer.name("header").beginObject();
+            writer.name("schemaType").value(schemaType);
+            writer.name("schemaVersion").value(schemaVersion).endObject();
+            writer.name("body");
+            target.write(writer);
+            writer.endObject();
+        };
+    }
+
+    /**
+     * Returns a JSON string representation of this object
+     * @param serializeNulls    true to serialize nulls
+     * @param indent            the indent to use if any
+     * @return              the JSON string
+     */
+    default String toJsonString(boolean serializeNulls, String indent) {
+        try {
+            var json = new StringWriter(1024 * 100);
+            var writer = new JsonWriter(json);
+            writer.setSerializeNulls(serializeNulls);
+            writer.setIndent(indent);
+            this.write(writer);
+            return json.toString();
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to encode object to JSON", ex);
+        }
+    }
+
+
+    /**
+     * Writes the value out which can potentially be null
+     * @param value     the value to write, can be null
+     * @param writer    the writer reference
+     * @param <T>       the value type
+     */
+    static <T extends JsonWritable> void write(T value, JsonWriter writer) throws IOException {
+        if (value == null) {
+            writer.nullValue();
+        } else {
+            value.write(writer);
+        }
+    }
 
 
     /**

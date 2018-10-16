@@ -48,8 +48,33 @@ public class User {
     /**
      * Returns the user bound to this thread
      * @return  the user associated with current thread
+     * @throws RuntimeException if no user associated with current thread
      */
     public static User getCurrentUser() {
+        final User user = currentUser.get();
+        if (user == null) {
+            throw new RuntimeException("No user associated with the current thread: " + Thread.currentThread().getName());
+        } else {
+            return user;
+        }
+    }
+
+
+    /**
+     * Returns an option on the user associated with current thread
+     * @return  the option on user associated with current thread
+     */
+    public static Option<User> current() {
+        return Option.of(currentUser.get());
+    }
+
+
+    /**
+     * Returns the user associated with current thread or throws exception
+     * @return  the user associated with current thread
+     * @throws RuntimeException if no user associated with current thread
+     */
+    public static User currentOrFail() {
         final User user = currentUser.get();
         if (user == null) {
             throw new RuntimeException("No user associated with the current thread: " + Thread.currentThread().getName());

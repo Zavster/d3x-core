@@ -193,7 +193,9 @@ public class Database extends LifeCycle.Base {
      */
     public boolean tableExists(String tableName) {
         ResultSet rs = null;
-        try (Connection conn = getDataSource().getConnection()) {
+        Connection conn = null;
+        try {
+            conn = getDataSource().getConnection();
             final DatabaseMetaData metaData = conn.getMetaData();
             final Set<String> nameSet = Set.of(tableName, tableName.toLowerCase(), tableName.toUpperCase());
             for (String name : nameSet) {
@@ -206,7 +208,7 @@ public class Database extends LifeCycle.Base {
         } catch (SQLException ex) {
             throw new DatabaseException(ex.getMessage(), ex);
         } finally {
-            IO.close(rs);
+            IO.close(rs, conn);
         }
     }
 
@@ -219,10 +221,12 @@ public class Database extends LifeCycle.Base {
      */
     public int count(String sql, Object... args) {
         ResultSet rs = null;
+        Connection conn = null;
         PreparedStatement stmt = null;
         final TimeZone timeZone = TimeZone.getDefault();
         final String sqlExpression = sql.startsWith("/") ? sql(sql) : sql;
-        try (Connection conn = getDataSource().getConnection()) {
+        try {
+            conn = getDataSource().getConnection();
             stmt = conn.prepareStatement(sqlExpression);
             DatabaseMapping.bindArgs(stmt, timeZone, Arrays.asList(args));
             rs = stmt.executeQuery();
@@ -230,8 +234,7 @@ public class Database extends LifeCycle.Base {
         } catch (Exception ex) {
             throw new DatabaseException("Failed to execute sql: " + sqlExpression, ex);
         } finally {
-            IO.close(rs);
-            IO.close(stmt);
+            IO.close(rs, stmt, conn);
         }
     }
 
@@ -254,9 +257,11 @@ public class Database extends LifeCycle.Base {
      * @throws DatabaseException    if fails to execute sql
      */
     public Option<Integer> execute(String sql, Option<Consumer<ResultSet>> handler) throws DatabaseException {
+        Connection conn = null;
         Statement stmt = null;
         final String sqlExpression = sql.startsWith("/") ? sql(sql) : sql;
-        try (Connection conn = getDataSource().getConnection()) {
+        try {
+            conn = getDataSource().getConnection();
             stmt = conn.createStatement();
             final boolean results = stmt.execute(sqlExpression);
             if (results && handler.isPresent()) {
@@ -270,7 +275,7 @@ public class Database extends LifeCycle.Base {
         } catch (Exception ex) {
             throw new DatabaseException("Faile d to execute sql: " + sqlExpression, ex);
         } finally {
-            IO.close(stmt);
+            IO.close(stmt, conn);
         }
     }
 
@@ -294,16 +299,18 @@ public class Database extends LifeCycle.Base {
      * @return          the number of records affected
      */
     public int executeUpdate(String sql, TimeZone timeZone, Object... args) {
+        Connection conn = null;
         PreparedStatement stmt = null;
         final String sqlExpression = sql.startsWith("/") ? sql(sql) : sql;
-        try (Connection conn = dataSource.getConnection()) {
+        try {
+            conn = dataSource.getConnection();
             stmt = conn.prepareStatement(sqlExpression);
             DatabaseMapping.bindArgs(stmt, timeZone, Arrays.asList(args));
             return stmt.executeUpdate();
         } catch (Exception ex) {
             throw new DatabaseException("Failed to execute sql: " + sqlExpression, ex);
         } finally {
-            IO.close(stmt);
+            IO.close(stmt, conn);
         }
     }
 

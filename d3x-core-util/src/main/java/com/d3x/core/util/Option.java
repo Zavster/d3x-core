@@ -18,6 +18,7 @@ package com.d3x.core.util;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import lombok.EqualsAndHashCode;
@@ -114,6 +115,15 @@ public final class Option<T> implements java.io.Serializable {
      */
     public final <R> Option<R> map(Function<T,R> mapper) {
         return isPresent() ? Option.of(mapper.apply(get())) : Option.empty();
+    }
+
+    /**
+     * Applies a filter to this option based on the predicate specified
+     * @param predicate     the predicate to apply to this filter
+     * @return              empty if this Option is already empty or predicate does not match value
+     */
+    public final Option<T> filter(Predicate<T> predicate) {
+        return isEmpty() || predicate.test(value) ? this : Option.empty();
     }
 
     /**

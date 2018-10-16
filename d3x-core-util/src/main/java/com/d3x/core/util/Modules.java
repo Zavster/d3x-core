@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 public class Modules extends LifeCycle.Base {
 
     private Map<Class<?>,Object> moduleMap = new LinkedHashMap<>();
+    private Consumers<Modules> onStartedConsumers = new Consumers<>();
+    private Consumers<Modules> onStoppedConsumers = new Consumers<>();
 
     /**
      * Constructor
@@ -59,6 +61,7 @@ public class Modules extends LifeCycle.Base {
     protected void doStart() throws RuntimeException {
         final long t1 = System.currentTimeMillis();
         final List<Object> modules = list();
+        this.onStartedConsumers.accept(this);
         final long t2 = System.currentTimeMillis();
         log.info("Started " + modules.size() + " modules in " + (t2-t1) + " millis");
     }
@@ -67,10 +70,32 @@ public class Modules extends LifeCycle.Base {
     @Override
     protected void doStop() throws RuntimeException {
         final long t1 = System.currentTimeMillis();
-        final List<Object> modules = list();
-        modules.stream().filter(m -> m instanceof LifeCycle).forEach(m -> ((LifeCycle)m).stop());
+        this.list().stream().filter(m -> m instanceof LifeCycle).forEach(m -> LifeCycle.stop((LifeCycle)m));
+        this.onStoppedConsumers.accept(this);
         final long t2 = System.currentTimeMillis();
-        log.info("Stopped " + modules.size() + " modules in " + (t2-t1) + " millis");
+        log.info("Stopped modules in " + (t2-t1) + " millis");
+    }
+
+    /**
+     * Attaches a consumer to be called after modules have started
+     * @param consumer  the consumer reference
+     * @return          these modules
+     */
+    public Modules onStarted(Consumer<Modules> consumer) {
+        Objects.requireNonNull(consumer, "The consumer cannot be null");
+        this.onStartedConsumers.attach(consumer);
+        return this;
+    }
+
+    /**
+     * Attaches a consumer to be called after modules have stopped
+     * @param consumer  the consumer reference
+     * @return          these modules
+     */
+    public Modules onStopped(Consumer<Modules> consumer) {
+        Objects.requireNonNull(consumer, "The consumer cannot be null");
+        this.onStoppedConsumers.attach(consumer);
+        return this;
     }
 
 

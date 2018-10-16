@@ -18,6 +18,7 @@ package com.d3x.core.json;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -42,8 +43,13 @@ import com.d3x.core.util.IO;
 import com.d3x.core.util.Option;
 import com.d3x.core.util.Password;
 import com.google.gson.Gson;
+import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.stream.JsonWriter;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -167,7 +173,7 @@ public class JsonTests {
     @Test()
     public void message() throws IOException {
         JsonStream.register(Payload.class, "payload");
-        Gson gson = Json.createGsonBuilder(Option.empty()).create();
+        Gson gson = Json.createGsonBuilder(Option.empty()).registerTypeAdapter(Payload.class, new PayloadSerialization()).create();
         List<Payload> payloads = IntStream.range(0, 10).mapToObj(i -> Payload.random()).collect(Collectors.toList());
         List<JsonObject> messages = payloads.stream().map(gson::toJsonTree).map(v -> Json.message("payload", 1, v)).collect(Collectors.toList());
         String jsonString = gson.toJson(messages);
@@ -184,6 +190,34 @@ public class JsonTests {
         IO.println(jsonString);
         Cron result = gson.fromJson(jsonString, Cron.class);
         Assert.assertEquals(result, expected);
+    }
+
+
+    @Test()
+    public void withSchema() {
+        Payload payload = Payload.random();
+        JsonSerialization<Payload> adapter = new PayloadSerialization().withSchema("payload", 1);
+        Gson gson = Json.createGsonBuilder(Option.empty()).registerTypeAdapter(Payload.class, adapter).create();
+        String jsonString1 = gson.toJson(payload);
+        IO.println(jsonString1);
+        Assert.assertEquals(gson.fromJson(jsonString1, Payload.class), payload);
+        String jsonString2 = payload.withSchema("payload", 1).toJsonString();
+        IO.println(jsonString2);
+        Assert.assertEquals(gson.fromJson(jsonString2, Payload.class), payload);
+    }
+
+
+    @Test()
+    public void duration() {
+        Gson gson = Json.createGsonBuilder(Option.empty()).create();
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("5ms"), Duration.class), Duration.ofMillis(5));
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("5 ms"), Duration.class), Duration.ofMillis(5));
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("5s"), Duration.class), Duration.ofMillis(5000));
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("5 s"), Duration.class), Duration.ofMillis(5000));
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("5.04s"), Duration.class), Duration.ofMillis((long)(5.04d * 1000)));
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("5.04 s"), Duration.class), Duration.ofMillis((long)(5.04d * 1000)));
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("1.04m"), Duration.class), Duration.ofMillis((long)(1.04d * 60d * 1000 )));
+        Assert.assertEquals(gson.fromJson(new JsonPrimitive("1.04 m"), Duration.class), Duration.ofMillis((long)(1.04d * 60d * 1000)));
     }
 
 
@@ -262,6 +296,28 @@ public class JsonTests {
             writer.name("dayOfWeek");
             writer.value(dayOfWeek == null ? null : dayOfWeek.name());
             writer.endObject();
+        }
+    }
+
+
+    static class PayloadSerialization implements JsonSerialization<Payload> {
+
+        private Gson gson = Json.createGsonBuilder(Option.empty()).create();
+
+        @Override
+        public JsonElement serialize(Payload payload, Type type, JsonSerializationContext context) {
+            return payload == null ? JsonNull.INSTANCE : gson.toJsonTree(payload);
+        }
+
+        @Override
+        public Payload deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+            if (json == null || json.equals(JsonNull.INSTANCE)) {
+                return null;
+            } else {
+                final JsonObject root = json.getAsJsonObject();
+                final JsonObject body = Json.getObjectOrFail(root, "body");
+                return gson.fromJson(body, Payload.class);
+            }
         }
     }
 }

@@ -184,9 +184,8 @@ public interface DatabaseMapping<T> {
                     final ZonedDateTime zonedDateTime = localDateTime.atZone(zoneId);
                     stmt.setTimestamp(paramIndex, new Timestamp(zonedDateTime.toInstant().toEpochMilli()), calendar);
                 } else if (arg instanceof ZonedDateTime) {
-                    final ZoneId zoneId = ZoneId.of(timeZone.getID());
+                    final ZonedDateTime dateTime = (ZonedDateTime)arg;
                     final Calendar calendar = Calendar.getInstance(timeZone);
-                    final ZonedDateTime dateTime = ((ZonedDateTime)arg).withZoneSameInstant(zoneId);
                     stmt.setTimestamp(paramIndex, new Timestamp(dateTime.toInstant().toEpochMilli()), calendar);
                 } else {
                     throw new RuntimeException("Cannot bind arg to PreparedStatement, unsupported arg type:" + arg);

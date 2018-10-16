@@ -97,7 +97,7 @@ public class Cron {
         } else if (tokens.length == 5) {
             return List.of("0", "0", tokens[0], tokens[1], tokens[2], tokens[3]);
         } else if (tokens.length == 6) {
-            return List.of("0", tokens[0], tokens[1], tokens[2], tokens[2], tokens[3], tokens[4]);
+            return List.of("0", tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[5]);
         } else {
             throw new RuntimeException("Malformed cron expression, cannot parse: " + expression);
         }
