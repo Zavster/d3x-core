@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS AuthToken
+(
+  id INTEGER AUTO_INCREMENT(0, 1) PRIMARY KEY ,
+  username VARCHAR(50) NOT NULL,
+  tokenKey VARCHAR(255) NOT NULL,
+  tokenValue VARCHAR(300) NOT NULL,
+  remoteIp VARCHAR(50) NOT NULL,
+  createUtc TIMESTAMP NOT NULL,
+);
+
+CREATE INDEX AuthToken_Index ON AuthToken (username, id);

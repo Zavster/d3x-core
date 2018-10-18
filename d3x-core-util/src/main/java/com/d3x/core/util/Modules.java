@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 public class Modules extends LifeCycle.Base {
 
     private Map<Class<?>,Object> moduleMap = new LinkedHashMap<>();
+    private Consumers<Modules> onStartingConsumers = new Consumers<>();
+    private Consumers<Modules> onStoppingConsumers = new Consumers<>();
     private Consumers<Modules> onStartedConsumers = new Consumers<>();
     private Consumers<Modules> onStoppedConsumers = new Consumers<>();
 
@@ -60,6 +62,7 @@ public class Modules extends LifeCycle.Base {
     @Override
     protected void doStart() throws RuntimeException {
         final long t1 = System.currentTimeMillis();
+        this.onStartingConsumers.accept(this);
         final List<Object> modules = list();
         this.onStartedConsumers.accept(this);
         final long t2 = System.currentTimeMillis();
@@ -70,11 +73,36 @@ public class Modules extends LifeCycle.Base {
     @Override
     protected void doStop() throws RuntimeException {
         final long t1 = System.currentTimeMillis();
+        this.onStoppingConsumers.accept(this);
         this.list().stream().filter(m -> m instanceof LifeCycle).forEach(m -> LifeCycle.stop((LifeCycle)m));
         this.onStoppedConsumers.accept(this);
         final long t2 = System.currentTimeMillis();
         log.info("Stopped modules in " + (t2-t1) + " millis");
     }
+
+
+    /**
+     * Attaches a consumer to be called before modules are started
+     * @param consumer  the consumer reference
+     * @return          these modules
+     */
+    public Modules onStarting(Consumer<Modules> consumer) {
+        Objects.requireNonNull(consumer, "The consumer cannot be null");
+        this.onStartingConsumers.attach(consumer);
+        return this;
+    }
+
+    /**
+     * Attaches a consumer to be called before modules are stopped
+     * @param consumer  the consumer reference
+     * @return          these modules
+     */
+    public Modules onStopping(Consumer<Modules> consumer) {
+        Objects.requireNonNull(consumer, "The consumer cannot be null");
+        this.onStoppingConsumers.attach(consumer);
+        return this;
+    }
+
 
     /**
      * Attaches a consumer to be called after modules have started
@@ -86,6 +114,7 @@ public class Modules extends LifeCycle.Base {
         this.onStartedConsumers.attach(consumer);
         return this;
     }
+
 
     /**
      * Attaches a consumer to be called after modules have stopped
